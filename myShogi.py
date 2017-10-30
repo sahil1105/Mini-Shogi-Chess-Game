@@ -413,7 +413,13 @@ def init_gameBoard_partial(gameBoard, init_pieces):
 		piece = pp['piece']
 		position = pp['position']
 		position = position_to_coord(position)
+		promote_it = False
+		if piece[0] == '+':
+			promote_it = True
+			piece = piece[1:]
 		gameBoard[position[0]][position[1]] = Piece(piece, position)
+		if promote_it:
+			gameBoard[position[0]][position[1]].promote()
 		if piece == 'k':
 			k_position = position
 		if piece == 'K':
@@ -424,11 +430,15 @@ def init_gameBoard_partial(gameBoard, init_pieces):
 def create_upper_captured(upper_captured, input_uc):
 
 	for p in input_uc:
+		if p[0] == '+':
+			p = p[1:]
 		upper_captured.append(Piece(p.upper(), (-1,-1)))
 
 def create_lower_captured(lower_captured, input_lc):
 
 	for p in input_lc:
+		if p[0] == '+':
+			p = p[1:]
 		lower_captured.append(Piece(p.lower(), (-1,-1)))
 
 
