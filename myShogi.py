@@ -649,34 +649,23 @@ if args.f is not None: #interactive mode
 	
 	info = utils.parseTestCase(args.f)
 	print (info)
+	init_pieces = info['initialPieces']
+	init_gameBoard_partial(gameBoard, init_pieces)
+	create_upper_captured(upper_captured, info['upperCaptures'])
+	create_lower_captured(lower_captured, info['lowerCaptures'])
 
+	moves_to_play = info['moves']
 
-
-else:
-
-	init_gameBoard(gameBoard)
 	lowers_turn = True
 
 	while moves_count < MOVES_LIMIT:
 		moves_count += 1
-		#print ("")
-		print (utils.stringifyBoard(gameBoard_to_stringBoard(gameBoard)))
-		print ("")
-		print ("Captures UPPER:", *[p.piece_type for p in upper_captured])
-		print ("Captures lower:", *[p.piece_type for p in lower_captured])
-		print ("")
 		if (checkDetection(gameBoard, lowers_turn)):
 			avail_moves = getOutOfCheckMoves(gameBoard, lowers_turn)
 			if (len(avail_moves) == 0):
 				print ("{} wins. Checkmate.".format('UPPER' if lowers_turn else 'lower'))
 				exit(0)
-			else:
-				print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
-				print ("Available moves:")
-				for m in avail_moves:
-					print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
-		print ("lower> " if lowers_turn else "UPPER> ", end="")
-		cmd = input()
+		cmd = moves_to_play[moves_count-1]
 		cmd = cmd.strip()
 		cmd = cmd.split()
 
@@ -732,8 +721,95 @@ else:
 			
 		lowers_turn = (not lowers_turn)
 
-	
 
+	if moves_count >= MOVES_LIMIT:
+		print ("Tie game. Too many moves.")
+		exit(0)
+
+
+
+
+else:
+
+	init_gameBoard(gameBoard)
+	lowers_turn = True
+	last_cmd = ''
+	while moves_count < MOVES_LIMIT:
+		moves_count += 1
+		if moves_count > 1:
+			print ("{} player action: {}".format('UPPER' if lowers_turn else 'lower', last_cmd))
+		print (utils.stringifyBoard(gameBoard_to_stringBoard(gameBoard)))
+		print ("")
+		print ("Captures UPPER:", *[p.piece_type for p in upper_captured])
+		print ("Captures lower:", *[p.piece_type for p in lower_captured])
+		print ("")
+		if (checkDetection(gameBoard, lowers_turn)):
+			avail_moves = getOutOfCheckMoves(gameBoard, lowers_turn)
+			if (len(avail_moves) == 0):
+				print ("{} wins. Checkmate.".format('UPPER' if lowers_turn else 'lower'))
+				exit(0)
+			else:
+				print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
+				print ("Available moves:")
+				for m in avail_moves:
+					print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
+		print ("lower> " if lowers_turn else "UPPER> ", end="")
+		cmd = input()
+		cmd = cmd.strip()
+		last_cmd = copy.deepcopy(cmd)
+		cmd = cmd.split()
+
+		if len(cmd) > 4:
+			printIllegalMove(lowers_turn)
+			exit(0)
+
+		if cmd[0] == 'move':
+
+			start_pos = position_to_coord(cmd[1])
+			end_pos = position_to_coord(cmd[2])
+
+			if start_pos == None or end_pos == None:
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+			promote = False
+			if len(cmd) == 4:
+				if cmd[3] == 'promote':
+					promote = True
+
+			move_result = move(gameBoard, (start_pos, end_pos), lowers_turn, promote)
+			if move_result == -1:
+				printIllegalMove(lowers_turn)
+				exit(0)
+			if move_result == 0:
+				print ("{} wins. Checkmate.".format('lower' if lowers_turn else 'UPPER'))
+				exit(0)
+
+		elif cmd[0] == 'drop':
+			
+			if len(cmd) > 3:
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+			piece_to_drop = cmd[1]
+			dropLocation = cmd[2]
+			dropLocation = position_to_coord(dropLocation)
+			if dropLocation == None:
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+			drop_res = validDrop(gameBoard, piece_to_drop, dropLocation, lowers_turn)
+
+			if (drop_res == -1):
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+		else:
+			
+			printIllegalMove(lowers_turn)
+			exit(0)	
+			
+		lowers_turn = (not lowers_turn)
 
 
 	if moves_count >= MOVES_LIMIT:
