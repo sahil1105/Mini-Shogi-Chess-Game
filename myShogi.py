@@ -698,7 +698,7 @@ if (not args.i) and (args.f is None):
 if args.f is not None: #interactive mode
 	
 	info = utils.parseTestCase(args.f)
-	print (info)
+	#print (info)
 	init_pieces = info['initialPieces']
 	init_gameBoard_partial(gameBoard, init_pieces)
 	create_upper_captured(upper_captured, info['upperCaptures'])
@@ -708,7 +708,7 @@ if args.f is not None: #interactive mode
 	last_cmd = ''
 	lowers_turn = True
 
-	while moves_count < MOVES_LIMIT:
+	while moves_count < min(MOVES_LIMIT, len(moves_to_play)):
 		moves_count += 1
 		if (checkDetection(gameBoard, lowers_turn)):
 			avail_moves = getOutOfCheckMoves(gameBoard, lowers_turn)
@@ -782,6 +782,7 @@ if args.f is not None: #interactive mode
 		lowers_turn = (not lowers_turn)
 
 
+	printEnd(lowers_turn, last_cmd)
 	if moves_count >= MOVES_LIMIT:
 		print ("Tie game. Too many moves.")
 		exit(0)
