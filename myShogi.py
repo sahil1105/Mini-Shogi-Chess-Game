@@ -23,7 +23,7 @@ class Piece:
 		self.moveTypes = set([piece_type])
 
 	def __str__(self):
-		return "{}{}".format(self.piece_type, ('+' if self.promoted else ''))
+		return "{}{}".format(('+' if self.promoted else ''), self.piece_type)
 
 	def promote(self):
 		if self.piece_type in ['K', 'k', 'g', 'G']:
@@ -677,11 +677,12 @@ def printEnd(lowers_turn, last_cmd):
 	global gameBoard
 	print ("{} player action: {}".format('UPPER' if lowers_turn else 'lower', last_cmd))
 	print (utils.stringifyBoard(gameBoard_to_stringBoard(gameBoard)))
-	print ("")
+	#print ("")
 	print ("Captures UPPER:", *[p.piece_type for p in upper_captured])
 	print ("Captures lower:", *[p.piece_type for p in lower_captured])
 	print ("")
 	print ("lower> " if lowers_turn else "UPPER> ")
+	print ("")
 
 
 parser = argparse.ArgumentParser()
@@ -717,6 +718,11 @@ if args.f is not None: #interactive mode
 				printEnd(lowers_turn, last_cmd)
 				print ("{} wins. Checkmate.".format('UPPER' if lowers_turn else 'lower'))
 				exit(0)
+			# else:
+			# 	print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
+			# 	print ("Available moves:")
+			# 	for m in avail_moves:
+			# 		print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
 		cmd = moves_to_play[moves_count-1]
 		cmd = cmd.strip()
 		last_cmd = copy.deepcopy(cmd)
