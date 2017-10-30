@@ -1,7 +1,7 @@
-import numpy as np
 import argparse
-import string
 import utils
+import copy
+
 
 N = 5
 MOVES_LIMIT = 200
@@ -369,7 +369,7 @@ def pawn_moves(curr_pos, gameBoard):
 moves = {'k': king_moves, 'K': king_moves, 'r': rook_moves, 'R': rook_moves, 'b': bishop_moves, 'B': bishop_moves, 'g': gold_general_moves, 'G': gold_general_moves, 's': silver_general_moves, 'S': silver_general_moves, 'p': pawn_moves, 'P': pawn_moves}
 
 def position_to_coord(pos):
-	x = int(pos[0] - 'a')
+	x = ord(pos[0]) - 97
 	y = int(pos[1]) - 1
 	if x > 4 or y > 4:
 		return None
@@ -378,8 +378,8 @@ def position_to_coord(pos):
 def coord_to_pos(coord):
 	x = coord[0]
 	y = coord[1]
-	x = chr('a' + x)
-	y = str(y)
+	x = chr(ord('a')+x)
+	y = str(y+1)
 	return str(x+y)
 
 def gameBoard_to_stringBoard(gameBoard): #print them as +p and so own if they are promoted
@@ -492,6 +492,7 @@ def moveWithoutEffect(gameBoard, move):
 	start_pos = move[0]
 	end_pos = move[1]
 
+	piece_at_start_pos = gameBoard[start_pos[0]][start_pos[1]]
 	gameBoard[end_pos[0]][end_pos[1]] = piece_at_start_pos
 	gameBoard[start_pos[0]][start_pos[1]] = None
 
@@ -538,7 +539,7 @@ def getOutOfCheckMoves(gameBoard, lowers_turn):
 		valid_moves = []
 		#check which of these result in a non-check state
 		for move in my_possible_moves:
-			if not checkDetection(moveWithoutEffect(gameBoard.copy.deepcopy(), move), lowers_turn):
+			if not checkDetection(moveWithoutEffect(copy.deepcopy(gameBoard), move), lowers_turn):
 				valid_moves.append(move)
 
 		return valid_moves
@@ -548,7 +549,7 @@ def getOutOfCheckMoves(gameBoard, lowers_turn):
 		valid_moves = []
 		#check which of these result in a non-check state
 		for move in my_possible_moves:
-			if not checkDetection(moveWithoutEffect(gameBoard.copy.deepcopy(), move), lowers_turn):
+			if not checkDetection(moveWithoutEffect(copy.deepcopy(gameBoard), move), lowers_turn):
 				valid_moves.append(move)
 
 		return valid_moves
@@ -559,19 +560,19 @@ def validDrop(gameBoard, piece, dropLocation, lowers_turn):
 
 	if lowers_turn:
 
-		piece = piece.toupper()
+		piece = piece.upper()
 
 		piece_to_drop = None
 		for i in range(len(lower_captured)):
 			if lower_captured[i].piece_type == piece:
 				piece_to_drop = lower_captured[i]
 				break
-		if piece_to_drop == None:
+		if piece_to_drop is None:
 			return -1
 		
 		lower_captured.remove(piece_to_drop)
 
-		piece_to_drop.piece_type = piece_to_drop.piece_type.tolower();
+		piece_to_drop.piece_type = piece_to_drop.piece_type.lower();
 		piece_to_drop.demote()
 
 		if gameBoard[dropLocation[0]][dropLocation[1]] is not None:
@@ -594,19 +595,19 @@ def validDrop(gameBoard, piece, dropLocation, lowers_turn):
 
 	else:
 
-		piece = piece.tolower()
+		piece = piece.lower()
 
 		piece_to_drop = None
 		for i in range(len(lower_captured)):
 			if upper_captured[i].piece_type == piece:
 				piece_to_drop = upper_captured[i]
 				break
-		if piece_to_drop == None:
+		if piece_to_drop is None:
 			return -1
 		
 		upper_captured.remove(piece_to_drop)
 
-		piece_to_drop.piece_type = piece_to_drop.piece_type.toupper();
+		piece_to_drop.piece_type = piece_to_drop.piece_type.upper();
 		piece_to_drop.demote()
 
 		if gameBoard[dropLocation[0]][dropLocation[1]] is not None:
@@ -672,8 +673,8 @@ else:
 			else:
 				print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
 				print ("Available moves:")
-				for move in avail_moves:
-					print ("move {} {}".format(coord_to_pos(moves[0]), coord_to_pos(moves[1])))
+				for m in avail_moves:
+					print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
 		print ("lower> " if lowers_turn else "UPPER> ", end="")
 		cmd = input()
 		cmd = cmd.strip()
