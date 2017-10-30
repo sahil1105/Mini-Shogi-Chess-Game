@@ -1,7 +1,17 @@
 import numpy as np
 import argparse
+import string
+import utils
 
 N = 5
+gameBoard = [[None for i in range(N)] for i in range(N)]
+lower_captured = []
+upper_captured = []
+
+moves_count = 0
+
+k_position = (-1,-1)
+K_position = (-1,-1)
 
 class Piece:
 
@@ -355,7 +365,7 @@ def pawn_moves(curr_pos, gameBoard):
 
 	return valid_moves
 
-moves = {'k': king_moves, 'K': king_moves, 'r': rook_moves, 'R': rook_moves, 'b': bishop_moves, 'B': bishop_moves, 'g': gold_general_moves, 'G': gold_general_moves. 's': silver_general_moves, 'S': silver_general_moves, 'p': pawn_moves, 'P': pawn_moves}
+moves = {'k': king_moves, 'K': king_moves, 'r': rook_moves, 'R': rook_moves, 'b': bishop_moves, 'B': bishop_moves, 'g': gold_general_moves, 'G': gold_general_moves, 's': silver_general_moves, 'S': silver_general_moves, 'p': pawn_moves, 'P': pawn_moves}
 
 def position_to_coord(pos):
 	x = int(pos[0] - 'a')
@@ -376,41 +386,51 @@ def gameBoard_to_stringBoard(gameBoard): #print them as +p and so own if they ar
 	return stringBoard
 
 def init_gameBoard(gameBoard):
+	global k_position
+	global K_position
 	gameBoard[0][4] = Piece('R', (0,4))
 	gameBoard[1][4] = Piece('B', (1,4))
 	gameBoard[2][4] = Piece('S', (2,4))
 	gameBoard[3][4] = Piece('G', (3,4))
 	gameBoard[4][4] = Piece('K', (4,4))
+	K_position = (4,4)
 	gameBoard[4][3] = Piece('P', (4,3))
 	gameBoard[0][1] = Piece('p', (0,1))
 	gameBoard[0][0] = Piece('k', (0,0))
+	k_position = (0,0)
 	gameBoard[1][0] = Piece('g', (1,0))
 	gameBoard[2][0] = Piece('s', (2,0))
 	gameBoard[3][0] = Piece('b', (3,0))
 	gameBoard[4][0] = Piece('r', (4,0))
 
 def move(gameBoard, move_played, lowers_turn, promote = False):
-	#if pawn moves into the promotion zone, automatically promote him
+	
+	global K_position
+	global k_position
+
 	start_pos = move_played[0]
 	end_pos = move_played[1]
 
 	#check if the move is valid
 	piece_at_start_pos = gameBoard[start_pos[0]][start_pos[1]]
 	if piece_at_start_pos == None:
-		return False
+		return -1
 	if (piece_at_start_pos.piece_type.islower() and (not lowers_turn)) or (piece_at_start_pos.piece_type.isupper() and lowers_turn):
-		return False
+		return -1
 	if end_pos not in piece_at_start_pos.possible_moves(gameBoard):
-		return False
+		return -1
 
 	#see if any captures are to be done
 	if gameBoard[end_pos[0]][end_pos[1]] is not None:
 		captured_piece = gameBoard[end_pos[0]][end_pos[1]]
+		captured_piece.demote()
 		if lowers_turn:
 			lower_captured.append(captured_piece)
 		else:
 			upper_captured.append(captured_piece)
 		captured_piece.position = (-1,-1)
+		if (lowers_turn and captured_piece.piece_type == 'K') or ((not lowers_turn) and captured_piece.piece_type == 'k'):
+			return 0
 
 	#update GameBoard and the piece's position
 	gameBoard[end_pos[0]][end_pos[1]] = piece_at_start_pos
@@ -418,33 +438,220 @@ def move(gameBoard, move_played, lowers_turn, promote = False):
 	piece_at_start_pos.position = end_pos
 
 	#promotion check
-	if promote and ((lowers_turn and end_pos[1] != 4) or (!lowers_turn and end_pos[1] != 0)):
-		return False
+	if promote and ((lowers_turn and end_pos[1] != 4) or ((not lowers_turn) and end_pos[1] != 0)):
+		return -1
 
+	#if pawn moves into the promotion zone, automatically promote him
 	if promote or (piece_at_start_pos.piece_type == 'p' and end_pos[1] == 4) or (piece_at_start_pos.piece_type == 'P' and end_pos[1] == 0):
 		piece_at_start_pos.promote()
 
-	return True
+	if (piece_at_start_pos.piece_type == 'K' and (not lowers_turn)):
+		K_position = end_pos
+	if (piece_at_start_pos.piece_type == 'k' and lowers_turn):
+		k_position = end_pos
+
+	return 1
+
+def find_k(gameBoard):
+	
+	global k_position
+	return k_position
+
+def find_K(gameBoard):
+
+	global K_position
+	return K_position
+
+def getAllUpperMoves(gameBoard):
+
+	all_upper_moves = []
+	for i in range(N):
+		for j in range(N):
+			if (gameBoard[i][j] is not None) and (gameBoard[i][j].piece_type.isupper()):
+				ps_moves = gameBoard[i][j].possible_moves(gameBoard)
+				for k in ps_moves:
+					all_upper_moves.append(((i,j), k))
+	return all_upper_moves
+
+def getAllLowerMoves(gameBoard):
+
+	all_lower_moves = []
+	for i in range(N):
+		for j in range(N):
+			if (gameBoard[i][j] is not None) and (gameBoard[i][j].piece_type.islower()):
+				ps_moves = gameBoard[i][j].possible_moves(gameBoard)
+				for k in ps_moves:
+					all_lower_moves.append(((i,j), k))
+	return all_lower_moves
+
+def moveWithoutEffect(gameBoard, move):
+
+	#assumes move is valid
+	#assumes a copy of gameBoard is passed in
+	start_pos = move[0]
+	end_pos = move[1]
+
+	gameBoard[end_pos[0]][end_pos[1]] = piece_at_start_pos
+	gameBoard[start_pos[0]][start_pos[1]] = None
+
+	return gameBoard
 
 def checkDetection(gameBoard, lowers_turn):
 
+	if lowers_turn:
+
+		kings_pos = find_k(gameBoard)
+		#get all possible moves for all of opponent's active pieces
+		opponents_moves = getAllUpperMoves(gameBoard)
+
+		#if any of them end up on king's pos, then player is in check, else return
+		inCheck = False
+		for move in opponents_moves:
+			if move[1] == kings_pos:
+				inCheck = True
+				break
+
+		return inCheck
+
+	else:
+
+		kings_pos = find_K(gameBoard)
+		#get all possible moves for all of opponent's active pieces
+		opponents_moves = getAllLowerMoves(gameBoard)
+
+		#if any of them end up on king's pos, then player is in check, else return
+		inCheck = False
+		for move in opponents_moves:
+			if move[1] == kings_pos:
+				inCheck = True
+				break
+
+		return inCheck
+
+	return True
+
+def getOutOfCheckMoves(gameBoard, lowers_turn):
 	
+	if lowers_turn:
+		my_possible_moves = getAllLowerMoves(gameBoard)
+		valid_moves = []
+		#check which of these result in a non-check state
+		for move in my_possible_moves:
+			if not checkDetection(moveWithoutEffect(gameBoard.copy.deepcopy(), move), lowers_turn):
+				valid_moves.append(move)
+
+		return valid_moves
+	
+	else:
+		my_possible_moves = getAllUpperMoves(gameBoard)
+		valid_moves = []
+		#check which of these result in a non-check state
+		for move in my_possible_moves:
+			if not checkDetection(moveWithoutEffect(gameBoard.copy.deepcopy(), move), lowers_turn):
+				valid_moves.append(move)
+
+		return valid_moves
+
+	return None
+
+def validDrop(gameBoard, piece, dropLocation, lowers_turn):
+
+	if lowers_turn:
+
+		piece = piece.toupper()
+
+		piece_to_drop = None
+		for i in range(len(lower_captured)):
+			if lower_captured[i].piece_type == piece:
+				piece_to_drop = lower_captured[i]
+				break
+		if piece_to_drop == None:
+			return -1
+		
+		lower_captured.remove(piece_to_drop)
+
+		piece_to_drop.piece_type = piece_to_drop.piece_type.tolower();
+		piece_to_drop.demote()
+
+		if gameBoard[dropLocation[0]][dropLocation[1]] is not None:
+			return -1
+
+		if piece == 'p' and dropLocation[1] == 4:
+			return -1
+
+		for i in range(N):
+			if (gameBoard[dropLocation[0]][i] is not None) and (gameBoard[dropLocation[0]][i].piece_type == 'p'):
+				return -1
+
+		gameBoard[dropLocation[0]][dropLocation[1]] = piece_to_drop
+		piece_to_drop.position = dropLocation
+
+		if (checkDetection(gameBoard, (not lowers_turn)) and len(getOutOfCheckMoves(gameBoard, (not lowers_turn))) == 0):
+			return -1
+
+		return 1 
+
+	else:
+
+		piece = piece.tolower()
+
+		piece_to_drop = None
+		for i in range(len(lower_captured)):
+			if upper_captured[i].piece_type == piece:
+				piece_to_drop = upper_captured[i]
+				break
+		if piece_to_drop == None:
+			return -1
+		
+		upper_captured.remove(piece_to_drop)
+
+		piece_to_drop.piece_type = piece_to_drop.piece_type.toupper();
+		piece_to_drop.demote()
+
+		if gameBoard[dropLocation[0]][dropLocation[1]] is not None:
+			return -1
+
+		if piece == 'P' and dropLocation[1] == 0:
+			return -1
+
+		for i in range(N):
+			if (gameBoard[dropLocation[0]][i] is not None) and (gameBoard[dropLocation[0]][i].piece_type == 'P'):
+				return -1
+
+		gameBoard[dropLocation[0]][dropLocation[1]] = piece_to_drop
+		piece_to_drop.position = dropLocation
+
+		if (checkDetection(gameBoard, (not lowers_turn)) and len(getOutOfCheckMoves(gameBoard, (not lowers_turn))) == 0):
+			return -1
+
+		return 1  
+
+	return 1
+
+
+parser = argparse.ArgumentParser()
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-i", action = 'store_true')
+group.add_argument("-f", type = str)
+args = parser.parse_args()
+
+if (not args.i) and (args.f is None):
+	print "Select atleast one of -f and -i flags"
+	exit(0)
 
 
 
-def validDrop(gameBoard, move):
-
-#def capture(gameBoard, move):
-
-
-
+if args.f is not None: #interactive mode
+	
+	info = utils.parseTestCase(args.f)
+	print info
 
 
 
 
-gameBoard = [[None for i in range(N)] for i in range(N)]
-lower_captured = []
-upper_captured = []
 
-moves_count = 0
+
+
+
+
 
