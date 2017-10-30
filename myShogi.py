@@ -62,12 +62,12 @@ class Piece:
 
 def notSamePlayer(x1,y1,x2,y2,gameBoard):
 	if (gameBoard[x1][y1] is None) or (gameBoard[x2][y2] is None):
-		return true
+		return True
 	if gameBoard[x1][y1].piece_type.islower() and gameBoard[x2][y2].piece_type.islower():
-		return false
+		return False
 	if gameBoard[x1][y1].piece_type.isupper() and gameBoard[x2][y2].piece_type.isupper():
-		return false
-	return true
+		return False
+	return True
 
 def king_moves(curr_pos, gameBoard):
 	
@@ -729,7 +729,6 @@ else:
 			printIllegalMove(lowers_turn)
 			exit(0)	
 			
-
 		lowers_turn = (not lowers_turn)
 
 	
