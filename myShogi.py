@@ -4,6 +4,7 @@ import string
 import utils
 
 N = 5
+MOVES_LIMIT = 200
 gameBoard = [[None for i in range(N)] for i in range(N)]
 lower_captured = []
 upper_captured = []
@@ -636,7 +637,7 @@ group.add_argument("-f", type = str)
 args = parser.parse_args()
 
 if (not args.i) and (args.f is None):
-	print "Select atleast one of -f and -i flags"
+	print ("Select atleast one of -f and -i flags")
 	exit(0)
 
 
@@ -644,8 +645,75 @@ if (not args.i) and (args.f is None):
 if args.f is not None: #interactive mode
 	
 	info = utils.parseTestCase(args.f)
-	print info
+	print (info)
 
+
+
+else:
+
+	init_gameBoard(gameBoard)
+	lowers_turn = True
+
+	while moves_count < MOVES_LIMIT:
+		moves_count += 1
+		#print ("")
+		print (utils.stringifyBoard(gameBoard_to_stringBoard(gameBoard)))
+		print ("")
+		print ("Captures UPPER:", *[p.piece_type for p in upper_captured])
+		print ("Captures lower:", *[p.piece_type for p in lower_captured])
+		print ("")
+		if (checkDetection(gameBoard, lowers_turn)):
+			avail_moves = getOutOfCheckMoves(gameBoard, lowers_turn)
+			if (len(avail_moves) == 0):
+				print ("{} wins. Checkmate.".format('UPPER' if lowers_turn else 'lower'))
+				exit(0)
+			else:
+				print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
+				print ("Available moves:")
+				for move in avail_moves:
+					print ("move {} {}".format(coord_to_pos(moves[0]), coord_to_pos(moves[1])))
+		print ("lower> " if lowers_turn else "UPPER> ", end="")
+		cmd = input()
+		cmd = cmd.strip()
+		cmd = cmd.split()
+
+		if len(cmd) != 3:
+			print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
+			exit(0)
+
+		if cmd[0] == 'move':
+
+			start_pos = position_to_coord(cmd[1])
+			end_pos = position_to_coord(cmd[2])
+
+			if start_pos == None or end_pos == None:
+				print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
+				exit(0)	
+			
+
+		elif cmd[0] == 'drop':
+		
+
+		else:
+			print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
+			exit(0)	
+			
+
+
+
+
+
+
+
+		lowers_turn = (not lowers_turn)
+
+	
+
+
+
+	if moves_count >= MOVES_LIMIT:
+		print ("Tie game. Too many moves.")
+		exit(0)
 
 
 
