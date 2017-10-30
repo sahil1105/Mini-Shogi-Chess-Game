@@ -629,6 +629,8 @@ def validDrop(gameBoard, piece, dropLocation, lowers_turn):
 
 	return 1
 
+def printIllegalMove(lowers_turn):
+	print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group()
@@ -677,8 +679,8 @@ else:
 		cmd = cmd.strip()
 		cmd = cmd.split()
 
-		if len(cmd) != 3:
-			print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
+		if len(cmd) > 4:
+			printIllegalMove(lowers_turn)
 			exit(0)
 
 		if cmd[0] == 'move':
@@ -687,23 +689,46 @@ else:
 			end_pos = position_to_coord(cmd[2])
 
 			if start_pos == None or end_pos == None:
-				print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
-				exit(0)	
-			
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+			promote = False
+			if len(cmd) == 4:
+				if cmd[3] == 'promote':
+					promote = True
+
+			move_result = move(gameBoard, (start_pos, end_pos), lowers_turn, promote)
+			if move_result == -1:
+				printIllegalMove(lowers_turn)
+				exit(0)
+			if move_result == 0:
+				print ("{} wins. Checkmate.".format('lower' if lowers_turn else 'UPPER'))
+				exit(0)
 
 		elif cmd[0] == 'drop':
-		
+			
+			if len(cmd) > 3:
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+			piece_to_drop = cmd[1]
+			dropLocation = cmd[2]
+			dropLocation = position_to_coord(dropLocation)
+			if dropLocation == None:
+				printIllegalMove(lowers_turn)
+				exit(0)
+
+			drop_res = validDrop(gameBoard, piece_to_drop, dropLocation, lowers_turn)
+
+			if (drop_res == -1):
+				printIllegalMove(lowers_turn)
+				exit(0)
 
 		else:
-			print ("{} wins. Illegal move.".format('UPPER' if lowers_turn else 'lower'))
+			
+			printIllegalMove(lowers_turn)
 			exit(0)	
 			
-
-
-
-
-
-
 
 		lowers_turn = (not lowers_turn)
 
