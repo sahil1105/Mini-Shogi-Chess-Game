@@ -383,7 +383,7 @@ def coord_to_pos(coord):
 	return str(x+y)
 
 def gameBoard_to_stringBoard(gameBoard): #print them as +p and so own if they are promoted
-	stringBoard = [[str(gameBoard[i][j]) if gameBoard[i][j] != None else '' for i in range(N)] for j in range(N)]
+	stringBoard = [[str(gameBoard[i][j]) if gameBoard[i][j] != None else '' for j in range(N)] for i in range(N)]
 	return stringBoard
 
 def init_gameBoard(gameBoard):
