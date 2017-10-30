@@ -681,6 +681,7 @@ def printEnd(lowers_turn, last_cmd):
 	print ("Captures UPPER:", *[p.piece_type for p in upper_captured])
 	print ("Captures lower:", *[p.piece_type for p in lower_captured])
 	print ("")
+	print ("lower> " if lowers_turn else "UPPER> ")
 
 
 parser = argparse.ArgumentParser()
