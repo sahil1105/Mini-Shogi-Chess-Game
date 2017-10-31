@@ -534,6 +534,9 @@ def moveWithoutEffect(gameBoard, move):
 	gameBoard[end_pos[0]][end_pos[1]] = piece_at_start_pos
 	gameBoard[start_pos[0]][start_pos[1]] = None
 
+	piece_at_start_pos.position = end_pos
+
+
 	return gameBoard
 
 def checkDetection(gameBoard, lowers_turn):
@@ -576,9 +579,16 @@ def getOutOfCheckMoves(gameBoard, lowers_turn):
 		my_possible_moves = getAllLowerMoves(gameBoard)
 		valid_moves = []
 		#check which of these result in a non-check state
-		for move in my_possible_moves:
-			if not checkDetection(moveWithoutEffect(copy.deepcopy(gameBoard), move), lowers_turn):
-				valid_moves.append(move)
+		
+		for move_i in my_possible_moves:
+			temp_gb = copy.deepcopy(gameBoard)
+			for i in range(len(gameBoard)):
+				for j in range(len(gameBoard)):
+					if gameBoard[i][j] is not None:
+						temp_gb[i][j] = copy.deepcopy(gameBoard[i][j])
+			move(temp_gb, move_i, lowers_turn)
+			if not checkDetection(temp_gb, lowers_turn):
+				valid_moves.append(move_i)
 
 		return valid_moves
 	
@@ -586,9 +596,15 @@ def getOutOfCheckMoves(gameBoard, lowers_turn):
 		my_possible_moves = getAllUpperMoves(gameBoard)
 		valid_moves = []
 		#check which of these result in a non-check state
-		for move in my_possible_moves:
-			if not checkDetection(moveWithoutEffect(copy.deepcopy(gameBoard), move), lowers_turn):
-				valid_moves.append(move)
+		for move_i in my_possible_moves:
+			temp_gb = copy.deepcopy(gameBoard)
+			for i in range(len(gameBoard)):
+				for j in range(len(gameBoard)):
+					if gameBoard[i][j] is not None:
+						temp_gb[i][j] = copy.deepcopy(gameBoard[i][j])
+			move(temp_gb, move_i, lowers_turn)
+			if not checkDetection(temp_gb, lowers_turn):
+				valid_moves.append(move_i)
 
 		return valid_moves
 
@@ -598,7 +614,7 @@ def validDrop(gameBoard, piece, dropLocation, lowers_turn):
 
 	if lowers_turn:
 
-		piece = piece.upper()
+		piece = piece.lower()
 
 		piece_to_drop = None
 		for i in range(len(lower_captured)):
@@ -633,10 +649,10 @@ def validDrop(gameBoard, piece, dropLocation, lowers_turn):
 
 	else:
 
-		piece = piece.lower()
+		piece = piece.upper()
 
 		piece_to_drop = None
-		for i in range(len(lower_captured)):
+		for i in range(len(upper_captured)):
 			if upper_captured[i].piece_type == piece:
 				piece_to_drop = upper_captured[i]
 				break
@@ -681,6 +697,16 @@ def printEnd(lowers_turn, last_cmd):
 	print ("Captures UPPER:", *[p.piece_type for p in upper_captured])
 	print ("Captures lower:", *[p.piece_type for p in lower_captured])
 	print ("")
+	if (checkDetection(gameBoard, lowers_turn)):
+			avail_moves = getOutOfCheckMoves(gameBoard, lowers_turn)
+			if (len(avail_moves) == 0):
+				print ("{} wins. Checkmate.".format('UPPER' if lowers_turn else 'lower'))
+				exit(0)
+			else:
+				print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
+				print ("Available moves:")
+				for m in avail_moves:
+					print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
 	print ("lower> " if lowers_turn else "UPPER> ")
 	print ("")
 
@@ -711,6 +737,7 @@ if args.f is not None: #interactive mode
 	lowers_turn = True
 
 	while moves_count < min(MOVES_LIMIT, len(moves_to_play)):
+		#print (lowers_turn)
 		moves_count += 1
 		if (checkDetection(gameBoard, lowers_turn)):
 			avail_moves = getOutOfCheckMoves(gameBoard, lowers_turn)
@@ -718,11 +745,11 @@ if args.f is not None: #interactive mode
 				printEnd(lowers_turn, last_cmd)
 				print ("{} wins. Checkmate.".format('UPPER' if lowers_turn else 'lower'))
 				exit(0)
-			# else:
-			# 	print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
-			# 	print ("Available moves:")
-			# 	for m in avail_moves:
-			# 		print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
+			else:
+				print ("{} player is in check!".format('lower' if lowers_turn else 'UPPER'))
+				print ("Available moves:")
+				for m in avail_moves:
+					print ("move {} {}".format(coord_to_pos(m[0]), coord_to_pos(m[1])))
 		cmd = moves_to_play[moves_count-1]
 		cmd = cmd.strip()
 		last_cmd = copy.deepcopy(cmd)
@@ -760,6 +787,7 @@ if args.f is not None: #interactive mode
 
 		elif cmd[0] == 'drop':
 			
+
 			if len(cmd) > 3:
 				printEnd(lowers_turn, last_cmd)
 				printIllegalMove(lowers_turn)
