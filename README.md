@@ -1,1 +1,1 @@
-# box-take-home
+# Mini Shogi Chess Game
